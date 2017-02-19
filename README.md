@@ -1,5 +1,5 @@
 # powershell-at-home
-Some powershell scripts I've been writing to help me with some problems at home.
+Some powershell scripts I've been writing to help me with some problems at home. To deal with long file name limitations these now depend on the really handy [AlphaFS library](http://alphafs.alphaleonis.com/).
 
 ### findwhen.ps1
 
