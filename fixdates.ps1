@@ -7,71 +7,126 @@ param (
 )
 
 if(-not($path)) { Throw "You must supply a value for -path" }
-$excludes = $exclude.split(",")
-
-Get-ChildItem "$path" -Recurse |
-Where-Object {$_.lastwritetime -gt $firstwrite -AND $_.lastwritetime -lt $lastwrite} | #Actual 2/12/2017 ~18:50 ~19:20
-Foreach-Object {
-  $fn = $_.FullName
-  $isdir = $_ -is [System.IO.DirectoryInfo]
-  $create = $_.CreationTime
-  $mod = $_.LastWriteTime
-  If ($_ -is [System.IO.DirectoryInfo]) {
-    $excluded = $false
-    $excludes | foreach {
-      if ($fn.startswith($_)) {
-        $excluded = $true
-	return
-      }
-    }
-    if ($excluded) {
-      "$fn is in the exclusion list"
-    } else {
-    "$isdir $fn $create $mod"
-    $newmod = $null
-    $newest_file = (Get-ChildItem -file "$fn" | sort-object -property LastWriteTime | select -last 1)
-    $newest_folder = (Get-ChildItem -dir "$fn" | sort-object -property LastWriteTime | select -last 1)
-    if ($newest_file -ne $null -And $newest_folder -ne $null) {
-      if ($newest_file.LastWriteTime -gt $newest_folder.LastWriteTime) {
-        "mod date should be file $newest_filemod"
-	$newest_filemod = $newest_file.LastWriteTime
-	$newmod = $newest_filemod
-      } else {
-        "mod date should be folder $newest_foldermod"
-	$newest_foldermod = $newest_folder.LastWriteTime
-	$newmod = $newest_foldermod
-      }
-    } elseif ($newest_file -ne $null) {
-      "mod date should be file $newest_filemod"
-      $newest_filemod = $newest_file.LastWriteTime
-      $newmod = $newest_filemod
-    } elseif ($newest_folder -ne $null) {
-      "mod date should be folder $newest_foldermod"
-      $newest_foldermod = $newest_folder.LastWriteTime
-      $newmod = $newest_foldermod
-    } else {
-      "has no children not modifying"
-      return
-    }
-    if ($doit) {
-      $_.LastWriteTime = $newmod
-      $_.LastAccessTime = $newmod
-    }
-    }
+if ($exclude -eq "") {
+  $doExclude = $false
+} else {
+  $doExlude = $false
+  $excludes = @()
+  $exclude.split(",") | foreach {
+    "EXCLUDE $_ $(Resolve-Path -Path $_)"
+    $excludes += ,$(Resolve-Path -Path $_)
   }
 }
 
-#      $newest_fn = $newest.FullName
-#      $newest_isdir = $newest -is [System.IO.DirectoryInfo]
-#      $newest_create = $newest.CreationTime
-#      $newest_mod = $newest.LastWriteTime
-#      "N: $newest_isdir $newest_fn $newest_create $newest_mod"
-#      if ($newest_isdir) {
-#        "mod date should be $newest_create"
-#     } else {
-#        "mod date should be $newest_mod"
-#	if ($doit) {
-#  	  $_.LastWriteTime = $newest_mod
-#	  $_.LastAccessTime = $newest_mod
-#	}
-#      }
+$libPath = Resolve-Path -Path "$PSScriptRoot\alpha\Lib\Net40\AlphaFS.dll"
+Import-Module -Name $libPath
+$folderPath = Resolve-Path -Path "$path"
+
+$loop = 1
+Do {
+"LOOP: $loop"
+$changes = $false
+$loop++
+[Alphaleonis.Win32.Filesystem.Directory]::EnumerateFileSystemEntries($folderPath, '*', [System.IO.SearchOption]::AllDirectories) |
+Foreach-Object {
+  Try {
+    $fsei = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
+  } Catch {
+    $ErrorMessage = $_.Exception.Message
+    $FailedItem = $_.Exception.ItemName
+    Write-Warning "$FailedItem : $ErrorMessage"
+    return
+  }
+  if ($fsei.LastWriteTime -gt $firstwrite -AND $fsei.LastWriteTime -lt $lastwrite) {
+    $create = $fsei.CreationTime
+    $mod = $fsei.LastWriteTime
+    $fn = $fsei.FullPath
+    $isdir = $fsei.IsDirectory
+    #"$create $mod $fn"
+    If ($isdir) {
+      $excluded = $false
+      if ($doExlcude) {
+        $excludes | foreach {
+          if ($fn.startswith($_)) {
+            $excluded = $true
+	        return
+          }
+        }
+      }
+      if ($excluded) {
+        "$fn is in the exclusion list"
+      } else {
+        $newmod = $null
+        $newest_file = $null
+        $newest_folder = $null
+        $nfi = [Alphaleonis.Win32.Filesystem.Directory]::EnumerateFiles($fn) | Foreach-Object {
+          Try {
+            $fsei_nfi = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
+          } Catch {
+            $ErrorMessage = $_.Exception.Message
+            $FailedItem = $_.Exception.ItemName
+            Write-Warning "$FailedItem : $ErrorMessage"
+            return
+          }
+          if ($newest_file -eq $null) {
+            $newest_file = $fsei_nfi
+          } else {
+            if ($fsei_nfi.LastWriteTime -gt $newest_file.LastWriteTime) {
+              $newest_file = $fsei_nfi
+            }
+          }
+        }
+        $nfo = [Alphaleonis.Win32.Filesystem.Directory]::EnumerateDirectories($fn) | ForEach-Object {
+          Try {
+            $fsei_nfo = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
+          } Catch {
+            $ErrorMessage = $_.Exception.Message
+            $FailedItem = $_.Exception.ItemName
+            Write-Warning "$FailedItem : $ErrorMessage"
+            return
+          }
+          if ($newest_folder -eq $null) {
+            $newest_folder = $fsei_nfo
+          } else {
+            if ($fsei_nfo.LastWriteTime -gt $newest_folder.LastWriteTime) {
+              $newest_folder = $fsei_nfo
+            }
+          }
+        }
+
+        if ($newest_file -ne $null -And $newest_folder -ne $null) {
+          if ($newest_file.LastWriteTime -gt $newest_folder.LastWriteTime) {
+            "mod date should be file $newest_filemod"
+	        $newest_filemod = $newest_file.LastWriteTime
+	        $newmod = $newest_filemod
+          } else {
+            "mod date should be folder $newest_foldermod"
+	        $newest_foldermod = $newest_folder.LastWriteTime
+	        $newmod = $newest_foldermod
+          }
+        } elseif ($newest_file -ne $null) {
+          "mod date should be file $newest_filemod"
+          $newest_filemod = $newest_file.LastWriteTime
+          $newmod = $newest_filemod
+        } elseif ($newest_folder -ne $null) {
+          "mod date should be folder $newest_foldermod"
+          $newest_foldermod = $newest_folder.LastWriteTime
+          $newmod = $newest_foldermod
+        } else {
+          "has no children not modifying"
+          return
+        }
+        if ($doit) {
+          if ($mod -ne $newmod) {
+            [Alphaleonis.Win32.Filesystem.Directory]::SetLastWriteTime("$fn",$newmod)
+            [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newmod)
+            "$isdir $fn $create $mod -> $newmod"
+            $changes = $true
+          }
+        }
+      }
+    }
+  }
+}
+} Until ($changes -eq $false)
+"Completed on loop $($loop - 1)"

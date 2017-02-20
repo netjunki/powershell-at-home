@@ -6,12 +6,24 @@ param (
 
 if(-not($path)) { Throw "You must supply a value for -path" }
 
-Get-ChildItem "$path" -Recurse |
-Where-Object {$_.lastwritetime -gt $firstwrite -AND $_.lastwritetime -lt $lastwrite} |
+$libPath = Resolve-Path -Path "$PSScriptRoot\alpha\Lib\Net40\AlphaFS.dll"
+Import-Module -Name $libPath
+$folderPath = Resolve-Path -Path "$path"
+
+[Alphaleonis.Win32.Filesystem.Directory]::EnumerateFileSystemEntries($folderPath, '*', [System.IO.SearchOption]::AllDirectories) |
 Foreach-Object {
-  $fn = $_.FullName
-  $isdir = $_ -is [System.IO.DirectoryInfo]
-  $create = $_.CreationTime
-  $mod = $_.LastWriteTime
-  "$isdir $fn $create $mod"
+  Try {
+    $fsei = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
+  } Catch {
+    $ErrorMessage = $_.Exception.Message
+    $FailedItem = $_.Exception.ItemName
+    Write-Warning "$FailedItem : $ErrorMessage"
+    return
+  }
+  if ($fsei.LastWriteTime -gt $firstwrite -AND $fsei.LastWriteTime -lt $lastwrite) {
+    $create = $fsei.CreationTime
+    $mod = $fsei.LastWriteTime
+    $fn = $fsei.FullPath
+    "$create $mod $fn"
+  }
 }
