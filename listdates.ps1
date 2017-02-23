@@ -20,6 +20,7 @@ Foreach-Object {
   }
   $create = $fsei.CreationTime
   $mod = $fsei.LastWriteTime
+  $access = $fsei.LastAccessTime
   $fn = $fsei.FullPath
-  "$create $mod $fn"
+  "$create $mod $access $fn"
 }
