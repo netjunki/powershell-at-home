@@ -40,6 +40,7 @@ Foreach-Object {
   if ($fsei.LastWriteTime -gt $firstwrite -AND $fsei.LastWriteTime -lt $lastwrite) {
     $create = $fsei.CreationTime
     $mod = $fsei.LastWriteTime
+    $access = $fsei.LastAccessTime
     $fn = $fsei.FullPath
     $isdir = $fsei.IsDirectory
     #"$create $mod $fn"
@@ -96,31 +97,31 @@ Foreach-Object {
 
         if ($newest_file -ne $null -And $newest_folder -ne $null) {
           if ($newest_file.LastWriteTime -gt $newest_folder.LastWriteTime) {
-            "mod date should be file $newest_filemod"
+            "$fn $create $mod $access mod date should be file $newest_filemod"
 	        $newest_filemod = $newest_file.LastWriteTime
 	        $newmod = $newest_filemod
           } else {
-            "mod date should be folder $newest_foldermod"
+            "$fn $create $mod $access mod date should be folder $newest_foldermod"
 	        $newest_foldermod = $newest_folder.LastWriteTime
 	        $newmod = $newest_foldermod
           }
         } elseif ($newest_file -ne $null) {
-          "mod date should be file $newest_filemod"
+          "$fn $create $mod $access mod date should be file $newest_filemod"
           $newest_filemod = $newest_file.LastWriteTime
           $newmod = $newest_filemod
         } elseif ($newest_folder -ne $null) {
-          "mod date should be folder $newest_foldermod"
+          "$fn $create $mod $access mod date should be folder $newest_foldermod"
           $newest_foldermod = $newest_folder.LastWriteTime
           $newmod = $newest_foldermod
         } else {
-          "has no children not modifying"
+          "$fn $create $mod $access  has no children not modifying"
           return
         }
         if ($doit) {
           if ($mod -ne $newmod) {
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastWriteTime("$fn",$newmod)
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newmod)
-            "$isdir $fn $create $mod -> $newmod"
+            "CHANGE $isdir $fn $fn $create $access $mod -> $newmod"
             $changes = $true
           }
         }
