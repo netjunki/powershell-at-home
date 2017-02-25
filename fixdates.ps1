@@ -119,12 +119,14 @@ $sorted_directories | Foreach-Object {
           "$fn $create $mod $access  has no children not modifying"
           return
         }
-        if ($doit) {
-          if ($mod -ne $newmod) {
+        if ($mod -ne $newmod) {
+          if ($doit) {
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastWriteTime("$fn",$newmod)
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newmod)
             "CHANGE $isdir $fn $fn $create $access $mod -> $newmod"
             $changes = $true
+          } else {
+            "NOCHANGE $isdir $fn $fn $create $access $mod -> $newmod"
           }
         }
       }
