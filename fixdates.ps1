@@ -24,26 +24,28 @@ $folderPath = Resolve-Path -Path "$path"
 
 $loop = 1
 Do {
-"LOOP: $loop"
 $changes = $false
-$loop++
-[Alphaleonis.Win32.Filesystem.Directory]::EnumerateFileSystemEntries($folderPath, '*', [System.IO.SearchOption]::AllDirectories) |
-Foreach-Object {
+$directories = @()
+[Alphaleonis.Win32.Filesystem.Directory]::EnumerateFileSystemEntries($folderPath, '*', [System.IO.SearchOption]::AllDirectories) | Foreach-Object {
   Try {
     $fsei = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
+    $directories += $fsei
   } Catch {
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
     Write-Warning "$FailedItem : $ErrorMessage"
     return
   }
+}
+$sorted_directories = $directories | Sort-Object -Descending -Property @{Expression={[int]([regex]::Matches($_.FullPath, "\\" )).count}}
+$sorted_directories | Foreach-Object {
+  $fsei = $_
   if ($fsei.LastWriteTime -gt $firstwrite -AND $fsei.LastWriteTime -lt $lastwrite) {
     $create = $fsei.CreationTime
     $mod = $fsei.LastWriteTime
     $access = $fsei.LastAccessTime
     $fn = $fsei.FullPath
     $isdir = $fsei.IsDirectory
-    #"$create $mod $fn"
     If ($isdir) {
       $excluded = $false
       if ($doExlcude) {
@@ -128,6 +130,7 @@ Foreach-Object {
       }
     }
   }
-}
+} # | Tee-Object -filepath out$loop.txt #debug loop operations
+$loop++
 } Until ($changes -eq $false)
 "Completed on loop $($loop - 1)"
