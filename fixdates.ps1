@@ -123,10 +123,10 @@ $sorted_directories | Foreach-Object {
           if ($doit) {
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastWriteTime("$fn",$newmod)
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newmod)
-            "CHANGE $isdir $fn $fn $create $access $mod -> $newmod"
+            "CHANGE $isdir $fn $create $access $mod -> $newmod"
             $changes = $true
           } else {
-            "NOCHANGE $isdir $fn $fn $create $access $mod -> $newmod"
+            "NOCHANGE $isdir $fn $create $access $mod -> $newmod"
           }
         }
       }
