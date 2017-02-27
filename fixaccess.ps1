@@ -26,7 +26,7 @@ $loop = 1
 Do {
 $changes = $false
 $directories = @()
-[Alphaleonis.Win32.Filesystem.Directory]::EnumerateFileSystemEntries($folderPath, '*', [System.IO.SearchOption]::AllDirectories) | Foreach-Object {
+[Alphaleonis.Win32.Filesystem.Directory]::EnumerateFileSystemEntries($folderPath, '*') | Foreach-Object {
   Try {
     $fsei = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
     $directories += $fsei
@@ -36,39 +36,13 @@ $directories = @()
     Write-Warning "$FailedItem : $ErrorMessage"
     return
   }
-}
-$sorted_directories = $directories #| Sort-Object -Descending -Property @{Expression={[int]([regex]::Matches($_.FullPath, "\\" )).count}}
-$sorted_directories | Foreach-Object {
-  $fsei = $_
-  if ($fsei.LastAccessTime -gt $firstwrite -AND $fsei.LastAccessTime -lt $lastwrite) {
-    $create = $fsei.CreationTime
-    $mod = $fsei.LastWriteTime
-    $access = $fsei.LastAccessTime
-    $fn = $fsei.FullPath
-    $isdir = $fsei.IsDirectory
-    If ($isdir) {
-      $excluded = $false
-      if ($doExlcude) {
-        $excludes | foreach {
-          if ($fn.startswith($_)) {
-            $excluded = $true
-	        return
-          }
-        }
-      }
-      if ($excluded) {
-        "$fn is in the exclusion list"
-      } else {
-        if ($access -ne $create) {
-          if ($doit) {
-            [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$create)
-            "CHANGE $isdir $fn $create $access $mod -> $create"
-            $changes = $true
-          } else {
-            "NOCHANGE $isdir $fn $create $access $mod -> $create"
-          }
-        }
-      }
+  if ($fsei.LastAccessTime -ne $fsei.CreationTime) {
+    if ($doit) {
+      [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime($fsei.FullPath,$fsei.CreationTime)
+      "CHANGE $isdir $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime) -> $($fsei.CreationTime)"
+      $changes = $true
+    } else {
+      "NOCHANGE $isdir $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime) -> $($fsei.CreationTime)"
     }
   }
 } # | Tee-Object -filepath out$loop.txt #debug loop operations
