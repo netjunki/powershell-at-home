@@ -25,24 +25,25 @@ $folderPath = Resolve-Path -Path "$path"
 $loop = 1
 Do {
 $changes = $false
-$directories = @()
-[Alphaleonis.Win32.Filesystem.Directory]::EnumerateFileSystemEntries($folderPath, '*') | Foreach-Object {
+[Alphaleonis.Win32.Filesystem.Directory]::EnumerateFileSystemEntries($folderPath, '*', [System.IO.SearchOption]::AllDirectories) | Foreach-Object {
   Try {
     $fsei = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
-    $directories += $fsei
   } Catch {
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
     Write-Warning "$FailedItem : $ErrorMessage"
     return
   }
-  if ($fsei.LastAccessTime -ne $fsei.CreationTime) {
-    if ($doit) {
-      [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime($fsei.FullPath,$fsei.CreationTime)
-      "CHANGE $isdir $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime) -> $($fsei.CreationTime)"
-      $changes = $true
-    } else {
-      "NOCHANGE $isdir $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime) -> $($fsei.CreationTime)"
+  "$($fsei.IsDirectory) $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime)"
+  if ($fsei.LastAccessTime -gt $firstwrite -AND $fsei.LastAccessTime -lt $lastwrite) {
+    if ($fsei.LastAccessTime -ne $fsei.CreationTime) {
+      if ($doit) {
+        [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime($fsei.FullPath,$fsei.CreationTime)
+        "CHANGE $($fsei.IsDirectory) $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime) -> $($fsei.CreationTime)"
+        $changes = $true
+      } else {
+        "NOCHANGE $($fsei.IsDirectory) $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime) -> $($fsei.CreationTime)"
+      }
     }
   }
 } # | Tee-Object -filepath out$loop.txt #debug loop operations
