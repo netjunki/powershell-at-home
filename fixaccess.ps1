@@ -22,31 +22,46 @@ $libPath = Resolve-Path -Path "$PSScriptRoot\alpha\Lib\Net40\AlphaFS.dll"
 Import-Module -Name $libPath
 $folderPath = Resolve-Path -Path "$path"
 
-$loop = 1
-Do {
-$changes = $false
-[Alphaleonis.Win32.Filesystem.Directory]::EnumerateFileSystemEntries($folderPath, '*', [System.IO.SearchOption]::AllDirectories) | Foreach-Object {
-  Try {
-    $fsei = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
-  } Catch {
-    $ErrorMessage = $_.Exception.Message
-    $FailedItem = $_.Exception.ItemName
-    Write-Warning "$FailedItem : $ErrorMessage"
-    return
-  }
-  "$($fsei.IsDirectory) $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime)"
-  if ($fsei.LastAccessTime -gt $firstwrite -AND $fsei.LastAccessTime -lt $lastwrite) {
-    if ($fsei.LastAccessTime -ne $fsei.CreationTime) {
-      if ($doit) {
-        [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime($fsei.FullPath,$fsei.CreationTime)
-        "CHANGE $($fsei.IsDirectory) $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime) -> $($fsei.CreationTime)"
-        $changes = $true
-      } else {
-        "NOCHANGE $($fsei.IsDirectory) $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime) -> $($fsei.CreationTime)"
+"$folderPath"
+
+Function Invoke-GenericMethod {
+    Param(
+        $Instance,
+        [String]$MethodName,
+        [Type[]]$TypeParameters,
+        [Object[]]$MethodParameters
+    )
+
+    [Collections.ArrayList]$Private:parameterTypes = @{}
+    ForEach ($Private:paramType In $MethodParameters) { [Void]$parameterTypes.Add($paramType.GetType()) }
+
+    $Private:method = $Instance.GetMethod($methodName, "Instance,Static,Public", $Null, $parameterTypes, $Null)
+
+    If ($Null -eq $method) { Throw ('Method: [{0}] not found.' -f ($Instance.ToString() + '.' + $methodName)) }
+    Else {
+        $method = $method.MakeGenericMethod($TypeParameters)
+        $method.Invoke($Instance, $MethodParameters)
+    }
+}
+
+ForEach ($Private:fsei In (Invoke-GenericMethod `
+    -Instance           ([Alphaleonis.Win32.Filesystem.Directory]) `
+    -MethodName         EnumerateFileSystemEntryInfos `
+    -TypeParameters     Alphaleonis.Win32.Filesystem.FileSystemEntryInfo `
+    -MethodParameters   "$folderPath", '*',
+                        ([Alphaleonis.Win32.Filesystem.DirectoryEnumerationOptions]'FilesAndFolders, SkipReparsePoints, Recursive, ContinueOnException'),
+                        ([Alphaleonis.Win32.Filesystem.PathFormat]::FullPath))) {
+
+    "$($fsei.IsDirectory) $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime)"
+    if ($fsei.LastAccessTime -gt $firstwrite -AND $fsei.LastAccessTime -lt $lastwrite) {
+      if ($fsei.LastAccessTime -ne $fsei.CreationTime) {
+        if ($doit) {
+          [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime($fsei.FullPath,$fsei.CreationTime)
+          "CHANGE $($fsei.IsDirectory) $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime) -> $($fsei.CreationTime)"
+          $changes = $true
+        } else {
+          "NOCHANGE $($fsei.IsDirectory) $($fsei.FullPath) $($fsei.CreationTime) $($fsei.LastAccessTime) -> $($fsei.CreationTime)"
+        }
       }
     }
-  }
-} # | Tee-Object -filepath out$loop.txt #debug loop operations
-$loop++
-} Until ($changes -eq $false)
-"Completed on loop $($loop - 1)"
+}
