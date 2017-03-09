@@ -22,22 +22,61 @@ $libPath = Resolve-Path -Path "$PSScriptRoot\alpha\Lib\Net40\AlphaFS.dll"
 Import-Module -Name $libPath
 $folderPath = Resolve-Path -Path "$path"
 
+Function Invoke-GenericMethod {
+    Param(
+        $Instance,
+        [String]$MethodName,
+        [Type[]]$TypeParameters,
+        [Object[]]$MethodParameters
+    )
+
+    [Collections.ArrayList]$Private:parameterTypes = @{}
+    ForEach ($Private:paramType In $MethodParameters) { [Void]$parameterTypes.Add($paramType.GetType()) }
+
+    $Private:method = $Instance.GetMethod($methodName, "Instance,Static,Public", $Null, $parameterTypes, $Null)
+
+    If ($Null -eq $method) { Throw ('Method: [{0}] not found.' -f ($Instance.ToString() + '.' + $methodName)) }
+    Else {
+        $method = $method.MakeGenericMethod($TypeParameters)
+        $method.Invoke($Instance, $MethodParameters)
+    }
+}
+
+
+Function Invoke-GenericMethod {
+    Param(
+        $Instance,
+        [String]$MethodName,
+        [Type[]]$TypeParameters,
+        [Object[]]$MethodParameters
+    )
+
+    [Collections.ArrayList]$Private:parameterTypes = @{}
+    ForEach ($Private:paramType In $MethodParameters) { [Void]$parameterTypes.Add($paramType.GetType()) }
+
+    $Private:method = $Instance.GetMethod($methodName, "Instance,Static,Public", $Null, $parameterTypes, $Null)
+
+    If ($Null -eq $method) { Throw ('Method: [{0}] not found.' -f ($Instance.ToString() + '.' + $methodName)) }
+    Else {
+        $method = $method.MakeGenericMethod($TypeParameters)
+        $method.Invoke($Instance, $MethodParameters)
+    }
+}
+
 $loop = 1
 Do {
 $changes = $false
 $directories = @()
-[Alphaleonis.Win32.Filesystem.Directory]::EnumerateFileSystemEntries($folderPath, '*', [System.IO.SearchOption]::AllDirectories) | Foreach-Object {
-  Try {
-    $fsei = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
+ForEach ($Private:fsei In (Invoke-GenericMethod `
+    -Instance           ([Alphaleonis.Win32.Filesystem.Directory]) `
+    -MethodName         EnumerateFileSystemEntryInfos `
+    -TypeParameters     Alphaleonis.Win32.Filesystem.FileSystemEntryInfo `
+    -MethodParameters   "$folderPath", '*',
+                        ([Alphaleonis.Win32.Filesystem.DirectoryEnumerationOptions]'Folders, SkipReparsePoints, Recursive, ContinueOnException'),
+                        ([Alphaleonis.Win32.Filesystem.PathFormat]::FullPath))) {
     $directories += $fsei
-  } Catch {
-    $ErrorMessage = $_.Exception.Message
-    $FailedItem = $_.Exception.ItemName
-    Write-Warning "$FailedItem : $ErrorMessage"
-    return
-  }
+$sorted_directories = $directories | Sort-Object -Descending -Property @{Expression={[int]([regex]::Matches($fsei.FullPath, "\\" )).count}}
 }
-$sorted_directories = $directories | Sort-Object -Descending -Property @{Expression={[int]([regex]::Matches($_.FullPath, "\\" )).count}}
 $sorted_directories | Foreach-Object {
   $fsei = $_
   if ($fsei.LastWriteTime -gt $firstwrite -AND $fsei.LastWriteTime -lt $lastwrite) {
@@ -123,10 +162,10 @@ $sorted_directories | Foreach-Object {
           if ($doit) {
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastWriteTime("$fn",$newmod)
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newmod)
-            "CHANGE $isdir $fn $create $access $mod -> $newmod"
+            "CHANGE $isdir $fn $fn $create $access $mod -> $newmod"
             $changes = $true
           } else {
-            "NOCHANGE $isdir $fn $create $access $mod -> $newmod"
+            "NOCHANGE $isdir $fn $fn $create $access $mod -> $newmod"
           }
         }
       }
