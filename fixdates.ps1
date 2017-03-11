@@ -46,6 +46,8 @@ $loop = 1
 Do {
 $changes = $false
 $directories = @()
+$Id = 1
+$indicator = @(".","o","O","o")
 ForEach ($Private:fsei In (Invoke-GenericMethod `
     -Instance           ([Alphaleonis.Win32.Filesystem.Directory]) `
     -MethodName         EnumerateFileSystemEntryInfos `
@@ -54,9 +56,17 @@ ForEach ($Private:fsei In (Invoke-GenericMethod `
                         ([Alphaleonis.Win32.Filesystem.DirectoryEnumerationOptions]'Folders, SkipReparsePoints, Recursive, ContinueOnException'),
                         ([Alphaleonis.Win32.Filesystem.PathFormat]::FullPath))) {
     $directories += $fsei
+    Write-Progress -Activity "Finding directories..." `
+		         -CurrentOperation "$($indicator[$Id % 4])"
+    $Id += 1
 }
 $sorted_directories = $directories | Sort-Object -Descending -Property @{Expression={[int]([regex]::Matches($fsei.FullPath, "\\" )).count}}
+$Id = 1
+$indicator = @("-","/","|","\")
 $sorted_directories | Foreach-Object {
+  Write-Progress -Activity "Processing directories..." `
+		         -CurrentOperation "$($indicator[$Id % 4])"
+  $Id += 1
   $fsei = $_
   if ($fsei.LastWriteTime -gt $firstwrite -AND $fsei.LastWriteTime -lt $lastwrite) {
     $create = $fsei.CreationTime
