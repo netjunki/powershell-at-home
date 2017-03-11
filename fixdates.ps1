@@ -54,8 +54,8 @@ ForEach ($Private:fsei In (Invoke-GenericMethod `
                         ([Alphaleonis.Win32.Filesystem.DirectoryEnumerationOptions]'Folders, SkipReparsePoints, Recursive, ContinueOnException'),
                         ([Alphaleonis.Win32.Filesystem.PathFormat]::FullPath))) {
     $directories += $fsei
-$sorted_directories = $directories | Sort-Object -Descending -Property @{Expression={[int]([regex]::Matches($fsei.FullPath, "\\" )).count}}
 }
+$sorted_directories = $directories | Sort-Object -Descending -Property @{Expression={[int]([regex]::Matches($fsei.FullPath, "\\" )).count}}
 $sorted_directories | Foreach-Object {
   $fsei = $_
   if ($fsei.LastWriteTime -gt $firstwrite -AND $fsei.LastWriteTime -lt $lastwrite) {
