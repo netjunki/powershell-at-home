@@ -144,8 +144,8 @@ $sorted_directories | Foreach-Object {
           $newest_foldermod = $newest_folder.LastWriteTime
           $newmod = $newest_foldermod
         } else {
-          "$fn $create $mod $access  has no children not modifying"
-          return
+          "$fn $create $mod $access has no children using create date for everything"
+	  $newmod = $create
         }
         if ($mod -ne $newmod) {
           if ($doit) {
