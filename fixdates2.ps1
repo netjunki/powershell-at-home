@@ -208,6 +208,17 @@ $sorted_directories | Foreach-Object {
             "CRENOCHANGE $isdir $fn $fn $create $access $mod -> $newcre"
           }
         }
+	
+        if ($access -ne $newcre) {
+          if ($doit) {
+            [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newcre)
+            [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newcre)
+            "ACCCHANGE $isdir $fn $fn $create $access $mod -> $newcre"
+            $changes = $true
+          } else {
+            "ACCNOCHANGE $isdir $fn $fn $create $access $mod -> $newcre"
+          }
+        }
       }
     }
   }
