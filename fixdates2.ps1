@@ -88,6 +88,7 @@ $sorted_directories | Foreach-Object {
         "$fn is in the exclusion list"
       } else {
         $newmod = $null
+	$newcre = $null
         $newest_file = $null
         $newest_folder = $null
         $oldest_file = $null
