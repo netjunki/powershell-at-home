@@ -144,21 +144,21 @@ $sorted_directories | Foreach-Object {
 
         if ($newest_file -ne $null -And $newest_folder -ne $null) {
           if ($newest_file.LastWriteTime -gt $newest_folder.LastWriteTime) {
+	    $newest_filemod = $newest_file.LastWriteTime
             "$fn $create $mod $access mod date should be file $newest_filemod"
-	        $newest_filemod = $newest_file.LastWriteTime
-	        $newmod = $newest_filemod
+	    $newmod = $newest_filemod
           } else {
+	    $newest_foldermod = $newest_folder.LastWriteTime
             "$fn $create $mod $access mod date should be folder $newest_foldermod"
-	        $newest_foldermod = $newest_folder.LastWriteTime
-	        $newmod = $newest_foldermod
+	    $newmod = $newest_foldermod
           }
         } elseif ($newest_file -ne $null) {
-          "$fn $create $mod $access mod date should be file $newest_filemod"
           $newest_filemod = $newest_file.LastWriteTime
+          "$fn $create $mod $access mod date should be file $newest_filemod"
           $newmod = $newest_filemod
         } elseif ($newest_folder -ne $null) {
-          "$fn $create $mod $access mod date should be folder $newest_foldermod"
           $newest_foldermod = $newest_folder.LastWriteTime
+          "$fn $create $mod $access mod date should be folder $newest_foldermod"
           $newmod = $newest_foldermod
         } else {
           "$fn $create $mod $access has no children using create date for everything"
@@ -166,22 +166,22 @@ $sorted_directories | Foreach-Object {
         }
 
         if ($oldest_file -ne $null -And $oldest_folder -ne $null) {
-          if ($oldest_file.Created -lt $oldest_folder.Created) {
-            "$fn $create $mod $access create date should be file $oldest_file.Created"
-	        $oldest_filecre = $oldest_file.Created
+          if ($oldest_file.CreationTime -lt $oldest_folder.CreationTime) {
+	        $oldest_filecre = $oldest_file.CreationTime
+                "$fn $create $mod $access create date should be file $oldest_filecre"
 	        $newcre = $oldest_filecre
           } else {
-            "$fn $create $mod $access create date should be folder $oldest_folder.Created"
-	        $oldest_foldercre = $oldest_folder.Created
+	        $oldest_foldercre = $oldest_folder.CreationTime
+                "$fn $create $mod $access create date should be folder $oldest_foldercre"
 	        $newcre = $oldest_foldercre
           }
         } elseif ($oldest_file -ne $null) {
-          "$fn $create $mod $access create date should be file $oldest_file.Created"
-          $oldest_filecre = $oldest_file.Created
+          $oldest_filecre = $oldest_file.CreationTime
+          "$fn $create $mod $access create date should be file $oldest_filecre"
           $newcre = $oldest_filecre
         } elseif ($oldest_folder -ne $null) {
-          "$fn $create $mod $access create date should be file $oldest_folder.Created"
-          $oldest_foldercre = $oldest_folder.Created
+          $oldest_foldercre = $oldest_folder.CreationTime
+          "$fn $create $mod $access create date should be file $oldest_foldercre"
           $newcre = $oldest_foldercre
         } else {
           "$fn $create $mod $access has no children using create date for everything"
