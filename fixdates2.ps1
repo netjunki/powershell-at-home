@@ -190,7 +190,6 @@ $sorted_directories | Foreach-Object {
         if ($mod -ne $newmod) {
           if ($doit) {
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastWriteTime("$fn",$newmod)
-            [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newmod)
             "MODCHANGE $isdir $fn $fn $create $access $mod -> $newmod"
             $changes = $true
           } else {
@@ -201,7 +200,6 @@ $sorted_directories | Foreach-Object {
         if ($create -ne $newcre) {
           if ($doit) {
             [Alphaleonis.Win32.Filesystem.Directory]::SetCreationTime("$fn",$newcre)
-            [Alphaleonis.Win32.Filesystem.Directory]::SetCreationTime("$fn",$newcre)
             "CRECHANGE $isdir $fn $fn $create $access $mod -> $newcre"
             $changes = $true
           } else {
@@ -211,7 +209,6 @@ $sorted_directories | Foreach-Object {
 	
         if ($access -ne $newcre) {
           if ($doit) {
-            [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newcre)
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newcre)
             "ACCCHANGE $isdir $fn $fn $create $access $mod -> $newcre"
             $changes = $true
