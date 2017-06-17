@@ -148,18 +148,18 @@ $sorted_directories | Foreach-Object {
             "$fn $create $mod $access mod date should be file $newest_filemod"
 	    $newmod = $newest_filemod
           } else {
-	    $newest_foldermod = $newest_folder.LastWriteTime
-            "$fn $create $mod $access mod date should be folder $newest_foldermod"
-	    $newmod = $newest_foldermod
+	    $newest_foldercre = $newest_folder.CreationTime
+            "$fn $create $mod $access mod date should be folder $newest_foldercre"
+	    $newmod = $newest_foldercre
           }
         } elseif ($newest_file -ne $null) {
           $newest_filemod = $newest_file.LastWriteTime
           "$fn $create $mod $access mod date should be file $newest_filemod"
           $newmod = $newest_filemod
         } elseif ($newest_folder -ne $null) {
-          $newest_foldermod = $newest_folder.LastWriteTime
-          "$fn $create $mod $access mod date should be folder $newest_foldermod"
-          $newmod = $newest_foldermod
+          $newest_foldercre = $newest_folder.CreationTime
+          "$fn $create $mod $access mod date should be folder $newest_foldercre"
+          $newmod = $newest_foldercre
         } else {
           "$fn $create $mod $access has no children using create date for everything"
 	  $newmod = $create
