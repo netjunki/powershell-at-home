@@ -166,7 +166,7 @@ $sorted_directories | Foreach-Object {
 
         if ($oldest_file -ne $null -And $oldest_folder -ne $null) {
           if ($oldest_file.Created -lt $oldest_folder.Created) {
-            "$fn $create $mod $access create date should be file $newest_file.Created"
+            "$fn $create $mod $access create date should be file $oldest_file.Created"
 	        $oldest_filecre = $oldest_file.Created
 	        $newcre = $oldest_filecre
           } else {
