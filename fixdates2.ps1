@@ -112,7 +112,7 @@ $sorted_directories | Foreach-Object {
 	  if ($oldest_file -eq $null) {
 	    $oldest_file = $fsei_nfi
 	  } else {
-	    if ($fsei_nfi.Created -lt $oldest_file.Created) {
+	    if ($fsei_nfi.Created -lt $oldest_file.CreationTime) {
 	      $oldest_file = $fsei_nfi
 	    }
 	  }
@@ -136,7 +136,7 @@ $sorted_directories | Foreach-Object {
 	  if ($oldest_folder -eq $null) {
 	    $oldest_folder = $fsei_nfo
 	  } else {
-	    if ($fsei_nfo.Created -lt $oldest_folder.Created) {
+	    if ($fsei_nfo.Created -lt $oldest_folder.CreationTime) {
 	      $oldest_folder = $fsei_nfo
 	    }
 	  }
@@ -181,7 +181,7 @@ $sorted_directories | Foreach-Object {
           $newcre = $oldest_filecre
         } elseif ($oldest_folder -ne $null) {
           $oldest_foldercre = $oldest_folder.CreationTime
-          "D$fn $create $mod $access create date should be file $oldest_foldercre ($oldest_folder)"
+          "D$fn $create $mod $access create date should be folder $oldest_foldercre ($oldest_folder)"
           $newcre = $oldest_foldercre
         } else {
           "E$fn $create $mod $access has no children using create date for everything"
