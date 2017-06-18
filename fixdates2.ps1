@@ -168,23 +168,23 @@ $sorted_directories | Foreach-Object {
         if ($oldest_file -ne $null -And $oldest_folder -ne $null) {
           if ($oldest_file.CreationTime -lt $oldest_folder.CreationTime) {
 	        $oldest_filecre = $oldest_file.CreationTime
-                "$fn $create $mod $access create date should be file $oldest_filecre"
+                "A$fn $create $mod $access create date should be file $oldest_filecre"
 	        $newcre = $oldest_filecre
           } else {
 	        $oldest_foldercre = $oldest_folder.CreationTime
-                "$fn $create $mod $access create date should be folder $oldest_foldercre"
+                "B$fn $create $mod $access create date should be folder $oldest_foldercre"
 	        $newcre = $oldest_foldercre
           }
         } elseif ($oldest_file -ne $null) {
           $oldest_filecre = $oldest_file.CreationTime
-          "$fn $create $mod $access create date should be file $oldest_filecre"
+          "C$fn $create $mod $access create date should be file $oldest_filecre"
           $newcre = $oldest_filecre
         } elseif ($oldest_folder -ne $null) {
           $oldest_foldercre = $oldest_folder.CreationTime
-          "$fn $create $mod $access create date should be file $oldest_foldercre"
+          "D$fn $create $mod $access create date should be file $oldest_foldercre"
           $newcre = $oldest_foldercre
         } else {
-          "$fn $create $mod $access has no children using create date for everything"
+          "E$fn $create $mod $access has no children using create date for everything"
 	  $newcre = $create
         }
 
