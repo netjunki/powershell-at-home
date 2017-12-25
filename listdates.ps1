@@ -1,5 +1,6 @@
 param ( 
-  [string]$path
+  [string]$path,
+  [switch]$mismatchedDateInName = $false
 )
 
 if(-not($path)) { Throw "You must supply a value for -path" }
@@ -23,5 +24,13 @@ Foreach-Object {
   $access = $fsei.LastAccessTime
   $fn = $fsei.FullPath
   $pathlen = $fn.length
-  "$create $mod $access $pathlen $fn"
+  if($mismatchedDateInName) {
+    if ($fn -match '(?<year>[0-9]{4})\.(?<month>[0-9]{2})\.(?<day>[0-9]{2})\.(?<dow>[MTWRFSU]) (?<hour>[0-9]{2})\.(?<minute>[0-9]{2})') {
+       #filename has date in filename
+       $matches
+       $create $mod $access $pathlen $fn"
+    }
+  } else {
+    "$create $mod $access $pathlen $fn"
+  }
 }
