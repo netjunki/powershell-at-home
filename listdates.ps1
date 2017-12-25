@@ -26,9 +26,24 @@ Foreach-Object {
   $pathlen = $fn.length
   if($mismatchedDateInName) {
     if ($fn -match '(?<year>[0-9]{4})\.(?<month>[0-9]{2})\.(?<day>[0-9]{2})\.(?<dow>[MTWRFSU]) (?<hour>[0-9]{2})\.(?<minute>[0-9]{2})') {
-       #filename has date in filename
-       $matches
-       $create $mod $access $pathlen $fn"
+       $year = $mod.ToString("yyyy")
+       $month = $mod.ToString("MM")
+       $day = $mod.ToString("dd")
+       $hour = $mod.ToString("HH")
+       $minute = $mod.ToString("mm")
+       $dow = $mod.ToString("ddd")
+       switch ($dow) {
+         "Mon" { $dow = "M" }
+         "Tue" { $dow = "W" }
+         "Wed" { $dow = "W" }
+         "Thu" { $dow = "R" }
+         "Fri" { $dow = "F" }
+         "Sat" { $dow = "S" }
+         "Sun" { $dow = "U" }
+       }
+       if ("$year.$month.$day.$dow $hour.$minute" -ne $matches[0]) {
+              "$create $mod $access $pathlen $fn"
+       }
     }
   } else {
     "$create $mod $access $pathlen $fn"
