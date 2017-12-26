@@ -21,7 +21,6 @@ if ($exclude -eq "") {
 $libPath = Resolve-Path -Path "$PSScriptRoot\alpha\Lib\Net40\AlphaFS.dll"
 Import-Module -Name $libPath
 $folderPath = Resolve-Path -Path "$path"
-
 Function Invoke-GenericMethod {
     Param(
         $Instance,
@@ -60,7 +59,8 @@ ForEach ($Private:fsei In (Invoke-GenericMethod `
 		         -CurrentOperation "$($indicator[$Id % 4])"
     $Id += 1
 }
-$sorted_directories = $directories | Sort-Object -Descending -Property @{Expression={[int]([regex]::Matches($fsei.FullPath, "\\" )).count}}
+$directories += [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo($folderPath)
+$sorted_directories = $directories | Sort-Object -Descending -Property @{Expression={[int]([regex]::Matches($_.FullPath, "\\" )).count}}
 $Id = 1
 $indicator = @("-","/","|","\")
 $sorted_directories | Foreach-Object {
@@ -93,7 +93,8 @@ $sorted_directories | Foreach-Object {
         $newest_folder = $null
         $oldest_file = $null
         $oldest_folder = $null
-        $nfi = [Alphaleonis.Win32.Filesystem.Directory]::EnumerateFiles($fn) | Foreach-Object {
+        $nfi = [Alphaleonis.Win32.Filesystem.Directory]::EnumerateFiles($fn) | Sort-Object -Descending -Property @{Expression={$_.Creation}}
+        $nfi | Foreach-Object {
           Try {
             $fsei_nfi = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
           } Catch {
@@ -117,7 +118,8 @@ $sorted_directories | Foreach-Object {
 	    }
 	  }
         }
-        $nfo = [Alphaleonis.Win32.Filesystem.Directory]::EnumerateDirectories($fn) | ForEach-Object {
+        $nfo = [Alphaleonis.Win32.Filesystem.Directory]::EnumerateDirectories($fn) | Sort-Object -Descending -Property @{Expression={$_.Creation}}
+	$nfo | ForEach-Object {
           Try {
             $fsei_nfo = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
           } Catch {
@@ -141,7 +143,6 @@ $sorted_directories | Foreach-Object {
 	    }
 	  }
         }
-
         if ($newest_file -ne $null -And $newest_folder -ne $null) {
           if ($newest_file.LastWriteTime -gt $newest_folder.LastWriteTime) {
 	    $newest_filemod = $newest_file.LastWriteTime
