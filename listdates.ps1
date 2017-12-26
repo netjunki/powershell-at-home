@@ -34,7 +34,7 @@ Foreach-Object {
        $dow = $mod.ToString("ddd")
        switch ($dow) {
          "Mon" { $dow = "M" }
-         "Tue" { $dow = "W" }
+         "Tue" { $dow = "T" }
          "Wed" { $dow = "W" }
          "Thu" { $dow = "R" }
          "Fri" { $dow = "F" }
