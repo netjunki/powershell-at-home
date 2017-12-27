@@ -93,102 +93,129 @@ $sorted_directories | Foreach-Object {
         $newest_folder = $null
         $oldest_file = $null
         $oldest_folder = $null
-        $nfi = [Alphaleonis.Win32.Filesystem.Directory]::EnumerateFiles($fn) | Sort-Object -Descending -Property @{Expression={$_.Creation}}
-        $nfi | Foreach-Object {
+        $nfi = [Alphaleonis.Win32.Filesystem.Directory]::EnumerateFiles($fn)
+	if ($nfi -ne $null) {
+	  $sorted_create_nfi = $nfi | Sort-Object -Property @{Expression={[Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_").CreationTime}}
+	  $sorted_modified_nfi = $nfi | Sort-Object -Property @{Expression={[Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_").LastWriteTime}}
+	  $oldest_c_file = $sorted_create_nfi | Select-Object -first 1
+	  $newest_c_file = $sorted_create_nfi | Select-Object -last 1
+	  $oldest_m_file = $sorted_modified_nfi | Select-Object -first 1
+	  $newest_m_file = $sorted_modified_nfi | Select-Object -last 1
           Try {
-            $fsei_nfi = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
+            $oldest_file = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$oldest_c_file")
           } Catch {
             $ErrorMessage = $_.Exception.Message
             $FailedItem = $_.Exception.ItemName
             Write-Warning "$FailedItem : $ErrorMessage"
             return
           }
-          if ($newest_file -eq $null) {
-            $newest_file = $fsei_nfi
-          } else {
-            if ($fsei_nfi.LastWriteTime -gt $newest_file.LastWriteTime) {
-              $newest_file = $fsei_nfi
+	  if ($newest_m_file -eq $newest_c_file) {
+            Try {
+              $newest_file = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$newest_c_file")
+            } Catch {
+              $ErrorMessage = $_.Exception.Message
+              $FailedItem = $_.Exception.ItemName
+              Write-Warning "$FailedItem : $ErrorMessage"
+              return
             }
-          }
-	  if ($oldest_file -eq $null) {
-	    $oldest_file = $fsei_nfi
 	  } else {
-	    if ($fsei_nfi.Created -lt $oldest_file.CreationTime) {
-	      $oldest_file = $fsei_nfi
-	    }
+            Try {
+              $newest_file = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$newest_m_file")
+            } Catch {
+              $ErrorMessage = $_.Exception.Message
+              $FailedItem = $_.Exception.ItemName
+              Write-Warning "$FailedItem : $ErrorMessage"
+              return
+            }
 	  }
-        }
-        $nfo = [Alphaleonis.Win32.Filesystem.Directory]::EnumerateDirectories($fn) | Sort-Object -Descending -Property @{Expression={$_.Creation}}
-	$nfo | ForEach-Object {
+	}
+        $nfo = [Alphaleonis.Win32.Filesystem.Directory]::EnumerateDirectories($fn)
+	if ($nfo -ne $null) {
+	  $sorted_create_nfo = $nfo | Sort-Object -Property @{Expression={[Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_").CreationTime}}
+	  $sorted_modified_nfo = $nfo | Sort-Object -Property @{Expression={[Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_").LastWriteTime}}
+	  $oldest_c_folder = $sorted_create_nfo | Select-Object -first 1
+	  $newest_c_folder = $sorted_create_nfo | Select-Object -last 1
+	  $oldest_m_folder = $sorted_modified_nfo | Select-Object -first 1
+	  $newest_m_folder = $sorted_modified_nfo | Select-Object -last 1
           Try {
-            $fsei_nfo = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$_")
+            $oldest_folder = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$oldest_c_folder")
           } Catch {
             $ErrorMessage = $_.Exception.Message
             $FailedItem = $_.Exception.ItemName
             Write-Warning "$FailedItem : $ErrorMessage"
             return
           }
-          if ($newest_folder -eq $null) {
-            $newest_folder = $fsei_nfo
-          } else {
-            if ($fsei_nfo.LastWriteTime -gt $newest_folder.LastWriteTime) {
-              $newest_folder = $fsei_nfo
+	  if ($newest_m_folder -eq $newest_c_folder) {
+            Try {
+              $newest_folder = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$newest_c_folder")
+            } Catch {
+              $ErrorMessage = $_.Exception.Message
+              $FailedItem = $_.Exception.ItemName
+              Write-Warning "$FailedItem : $ErrorMessage"
+              return
             }
-          }
-	  if ($oldest_folder -eq $null) {
-	    $oldest_folder = $fsei_nfo
 	  } else {
-	    if ($fsei_nfo.Created -lt $oldest_folder.CreationTime) {
-	      $oldest_folder = $fsei_nfo
-	    }
+            Try {
+              $newest_folder = [Alphaleonis.Win32.Filesystem.File]::GetFileSystemEntryInfo("$newest_m_folder")
+            } Catch {
+              $ErrorMessage = $_.Exception.Message
+              $FailedItem = $_.Exception.ItemName
+              Write-Warning "$FailedItem : $ErrorMessage"
+              return
+            }
 	  }
-        }
+	}
         if ($newest_file -ne $null -And $newest_folder -ne $null) {
           if ($newest_file.LastWriteTime -gt $newest_folder.LastWriteTime) {
 	    $newest_filemod = $newest_file.LastWriteTime
-            "$fn $create $mod $access mod date should be file $newest_filemod"
+            "MA $fn $create $mod $access mod date should be file $newest_filemod"
+	    $newmod = $newest_filemod
+	  } elseif ($newest_file.LastWriteTime -lt $newest_folder.LastWriteTime) {
+	    $newest_filemod = $newest_folder.LastWriteTime
+            "MA2 $fn $create $mod $access mod date should be file $newest_filemod"
 	    $newmod = $newest_filemod
           } else {
 	    $newest_foldercre = $newest_folder.CreationTime
-            "$fn $create $mod $access mod date should be folder $newest_foldercre"
+            "MB $fn $create $mod $access mod date should be folder $newest_foldercre"
 	    $newmod = $newest_foldercre
           }
         } elseif ($newest_file -ne $null) {
           $newest_filemod = $newest_file.LastWriteTime
-          "$fn $create $mod $access mod date should be file $newest_filemod"
+          "MC $fn $create $mod $access mod date should be file $newest_filemod"
           $newmod = $newest_filemod
         } elseif ($newest_folder -ne $null) {
           $newest_foldercre = $newest_folder.CreationTime
-          "$fn $create $mod $access mod date should be folder $newest_foldercre"
+          "MD $fn $create $mod $access mod date should be folder $newest_foldercre"
           $newmod = $newest_foldercre
         } else {
-          "$fn $create $mod $access has no children using create date for everything"
+          "ME $fn $create $mod $access has no children using create date for everything"
 	  $newmod = $create
         }
 
         if ($oldest_file -ne $null -And $oldest_folder -ne $null) {
           if ($oldest_file.CreationTime -lt $oldest_folder.CreationTime) {
 	        $oldest_filecre = $oldest_file.CreationTime
-                "A$fn $create $mod $access create date should be file $oldest_filecre"
+                "CA $fn $create $mod $access create date should be file $oldest_filecre"
 	        $newcre = $oldest_filecre
           } else {
 	        $oldest_foldercre = $oldest_folder.CreationTime
-                "B$fn $create $mod $access create date should be folder $oldest_foldercre"
+                "CB $fn $create $mod $access create date should be folder $oldest_foldercre"
 	        $newcre = $oldest_foldercre
           }
         } elseif ($oldest_file -ne $null) {
           $oldest_filecre = $oldest_file.CreationTime
-          "C$fn $create $mod $access create date should be file $oldest_filecre"
+          "CC $fn $create $mod $access create date should be file $oldest_filecre"
           $newcre = $oldest_filecre
         } elseif ($oldest_folder -ne $null) {
           $oldest_foldercre = $oldest_folder.CreationTime
-          "D$fn $create $mod $access create date should be folder $oldest_foldercre ($oldest_folder)"
+          "CD $fn $create $mod $access create date should be folder $oldest_foldercre ($oldest_folder)"
           $newcre = $oldest_foldercre
         } else {
-          "E$fn $create $mod $access has no children using create date for everything"
+          "CE $fn $create $mod $access has no children using create date for everything"
 	  $newcre = $create
         }
 
+	Try {
         if ($mod -ne $newmod) {
           if ($doit) {
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastWriteTime("$fn",$newmod)
@@ -208,7 +235,7 @@ $sorted_directories | Foreach-Object {
             "CRENOCHANGE $isdir $fn $fn $create $access $mod -> $newcre"
           }
         }
-	
+
         if ($access -ne $newcre) {
           if ($doit) {
             [Alphaleonis.Win32.Filesystem.Directory]::SetLastAccessTime("$fn",$newcre)
@@ -217,6 +244,12 @@ $sorted_directories | Foreach-Object {
           } else {
             "ACCNOCHANGE $isdir $fn $fn $create $access $mod -> $newcre"
           }
+        }
+        } Catch {
+          $ErrorMessage = $_.Exception.Message
+          $FailedItem = $_.Exception.ItemName
+          Write-Warning "$FailedItem : $ErrorMessage"
+          exit
         }
       }
     }
