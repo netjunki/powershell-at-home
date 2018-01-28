@@ -1,6 +1,6 @@
 param ( 
   [string]$path,
-  [switch]$mismatchedDateInName = $false
+  [switch]$mismatchedDateInName = $false,
   [switch]$useCreate = $false
 )
 
@@ -24,9 +24,10 @@ Foreach-Object {
   $mod = $fsei.LastWriteTime
   $access = $fsei.LastAccessTime
   $fn = $fsei.FullPath
+  $bn = $fsei.FileName
   $pathlen = $fn.length
   if($mismatchedDateInName) {
-    if ($fn -match '(?<year>[0-9]{4})\.(?<month>[0-9]{2})\.(?<day>[0-9]{2})\.(?<dow>[MTWRFSU]) (?<hour>[0-9]{2})\.(?<minute>[0-9]{2})') {
+    if ($bn -match '(?<year>[0-9]{4})\.(?<month>[0-9]{2})\.(?<day>[0-9]{2})\.(?<dow>[MTWRFSU]) (?<hour>[0-9]{2})\.(?<minute>[0-9]{2})') {
        if ($useCreate) {
          $compare = $create
        } else {
