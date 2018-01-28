@@ -41,7 +41,7 @@ Foreach-Object {
          "Sat" { $dow = "S" }
          "Sun" { $dow = "U" }
        }
-       if ("$year.$month.$day.$dow $hour.$minute" -ne $matches[0]) {
+       if ("$year.$month.$day.$dow $hour" -ne $matches[0]) {
               "$create $mod $access $pathlen $fn"
        }
     }
