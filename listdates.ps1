@@ -1,6 +1,7 @@
 param ( 
   [string]$path,
   [switch]$mismatchedDateInName = $false
+  [switch]$useCreate = $false
 )
 
 if(-not($path)) { Throw "You must supply a value for -path" }
@@ -26,12 +27,17 @@ Foreach-Object {
   $pathlen = $fn.length
   if($mismatchedDateInName) {
     if ($fn -match '(?<year>[0-9]{4})\.(?<month>[0-9]{2})\.(?<day>[0-9]{2})\.(?<dow>[MTWRFSU]) (?<hour>[0-9]{2})\.(?<minute>[0-9]{2})') {
-       $year = $mod.ToString("yyyy")
-       $month = $mod.ToString("MM")
-       $day = $mod.ToString("dd")
-       $hour = $mod.ToString("HH")
-       $minute = $mod.ToString("mm")
-       $dow = $mod.ToString("ddd")
+       if ($useCreate) {
+         $compare = $create
+       } else {
+         $compare = $mod
+       }
+       $year = $compare.ToString("yyyy")
+       $month = $compare.ToString("MM")
+       $day = $compare.ToString("dd")
+       $hour = $compare.ToString("HH")
+       $minute = $compare.ToString("mm")
+       $dow = $compare.ToString("ddd")
        switch ($dow) {
          "Mon" { $dow = "M" }
          "Tue" { $dow = "T" }
