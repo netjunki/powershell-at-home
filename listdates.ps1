@@ -1,7 +1,7 @@
 param ( 
   [string]$path,
   [switch]$mismatchedDateInName = $false,
-  [switch]$useCreate = $false
+  [switch]$useModified = $false
 )
 
 if(-not($path)) { Throw "You must supply a value for -path" }
@@ -28,10 +28,10 @@ Foreach-Object {
   $pathlen = $fn.length
   if($mismatchedDateInName) {
     if ($bn -match '(?<year>[0-9]{4})\.(?<month>[0-9]{2})\.(?<day>[0-9]{2})\.(?<dow>[MTWRFSU]) (?<hour>[0-9]{2})\.(?<minute>[0-9]{2})') {
-       if ($useCreate) {
-         $compare = $create
-       } else {
+       if ($useModified) {
          $compare = $mod
+       } else {
+         $compare = $create
        }
        $year = $compare.ToString("yyyy")
        $month = $compare.ToString("MM")
@@ -50,7 +50,12 @@ Foreach-Object {
        }
        $matchwith = "{0}.{1}.{2}.{3} {4}" -f $matches.year,$matches.month,$matches.day,$matches.dow,$matches.hour
        if ("$year.$month.$day.$dow $hour" -ne $matchwith) {
-              "$create $mod $access $pathlen $fn"
+         $matchwith2 = "{0}.{1}.{2} {3}" -f $matches.year,$matches.month,$matches.day,$matches.hour
+         if ("$year.$month.$day $hour" -ne $matchwith2) {
+           "$create $mod $access $pathlen $fn"
+	 } else {
+           "DoW ({0}->{1}): $create $mod $access $pathlen $fn" -f $matches.dow,$dow
+	 }
        }
     }
   } else {
